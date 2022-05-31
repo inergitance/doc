@@ -1,0 +1,249 @@
+-----------------
+Creation transaction:
+
+1-n inputs
+
+following outputs:
+
+PHASE1_HERITAGE_CONTRACT_ADDR: +new NFT
+
+R4[SigmaProp] - sigmaprop of owner pubkey
+R5[SigmaProp] - sigmaprop of heir pubkey
+R6[Coll[Byte]] - blake2b256 hashed value (holiday protection)
+R7[Int] - blocks value (amount of blocks)
+R8[Coll[Byte]] - indentification NFT id
+R9[Coll[Byte]] - blake2b256 hash of phase1 contract propositionBytes
+
+OWNER_INDICATION_CONTRACT_ADDR: MIN_NANO_ERGS
+
+HEIR_INDICATION_CONTRACT_ADDR: MIN_NANO_ERGS
+
+SERVICE_FEE_ADDR: SERVICE_FEE
+
+CHANGE_ADDR: change (optional - if any)
+
+MINER_FEE_ADDR: MINER_FEE
+
+-----------------
+
+Smart contracts:
+
+Phase1
+
+{
+	
+	val owner = SELF.R4[SigmaProp].get
+	val heir = SELF.R5[SigmaProp].get
+
+	val nft_id = SELF.R8[Coll[Byte]].get
+
+	val contain_nft = {(output_box: Box) => anyOf(output_box.tokens.map{ (token: (Coll[Byte],Long)) => token._1 == nft_id })}
+
+	val nft_spent = !(OUTPUTS.exists(contain_nft))
+
+	val sent_back_to_itself = OUTPUTS(0).propositionBytes == SELF.propositionBytes
+	val sent_to_phase2 = blake2b256(OUTPUTS(0).propositionBytes) == fromBase64("phase2_propBytes_hash_base64")
+	
+	val registers_preserved = {
+		OUTPUTS(0).R4[SigmaProp].get == SELF.R4[SigmaProp].get &&
+		OUTPUTS(0).R5[SigmaProp].get == SELF.R5[SigmaProp].get &&
+		OUTPUTS(0).R6[Coll[Byte]].get == SELF.R6[Coll[Byte]].get &&
+		OUTPUTS(0).R7[Int].get == SELF.R7[Int].get &&
+		OUTPUTS(0).R8[Coll[Byte]].get == SELF.R8[Coll[Byte]].get &&
+		OUTPUTS(0).R9[Coll[Byte]].get == blake2b256(SELF.propositionBytes)
+	}
+	
+	val ergs_preserved = OUTPUTS(0).value >= (SELF.value - 10000000L)
+	val min_ergs = OUTPUTS(0).value >= (11000000L)
+	
+	val tokens_preserved = OUTPUTS(0).tokens == SELF.tokens
+
+	val all_preserved = registers_preserved && ergs_preserved && tokens_preserved
+
+	val owner_spending = owner && nft_spent
+	val owner_draining = owner && min_ergs && sent_back_to_itself && registers_preserved && (!nft_spent)
+	val heir_spending = heir && sent_to_phase2 && all_preserved
+
+	owner_spending || owner_draining || heir_spending
+
+}
+
+--------
+
+Phase2
+
+{
+
+	val owner = SELF.R4[SigmaProp].get
+	val heir = SELF.R5[SigmaProp].get
+	val holiday_protector_hash = SELF.R6[Coll[Byte]].get
+
+	val blocks_delay = SELF.R7[Int].get
+
+	val nft_id = SELF.R8[Coll[Byte]].get
+
+	val contain_nft = {(output_box: Box) => anyOf(output_box.tokens.map{ (token: (Coll[Byte],Long)) => token._1 == nft_id })}
+
+	val nft_spent = !(OUTPUTS.exists(contain_nft))
+
+	val sent_to_phase1 = blake2b256(OUTPUTS(0).propositionBytes) == SELF.R9[Coll[Byte]].get
+	val sent_to_phase3 = blake2b256(OUTPUTS(0).propositionBytes) == fromBase64("phase3_propBytes_hash_base64")
+	
+	val registers_preserved_without_R6 = {
+		OUTPUTS(0).R4[SigmaProp].get == SELF.R4[SigmaProp].get &&
+		OUTPUTS(0).R5[SigmaProp].get == SELF.R5[SigmaProp].get &&
+		OUTPUTS(0).R7[Int].get == SELF.R7[Int].get &&
+		OUTPUTS(0).R8[Coll[Byte]].get == SELF.R8[Coll[Byte]].get &&
+		OUTPUTS(0).R9[Coll[Byte]].get == SELF.R9[Coll[Byte]].get
+	}
+	
+	val ergs_preserved = OUTPUTS(0).value >= (SELF.value - 10000000L)
+	val min_ergs = OUTPUTS(0).value >= (11000000L)
+
+	val tokens_preserved = OUTPUTS(0).tokens == SELF.tokens
+
+	val all_preserved = registers_preserved_without_R6 && ergs_preserved && tokens_preserved
+
+	val hash_of_preimage_in_output = blake2b256(OUTPUTS(0).R6[Coll[Byte]].get)
+
+	val hash_preimage_ok = holiday_protector_hash == hash_of_preimage_in_output
+
+	val enough_time_elapsed_for_heir_withdrawal = HEIGHT >= (SELF.creationInfo._1 + blocks_delay)
+
+	val registers_preserved = {
+		registers_preserved_without_R6 &&
+		OUTPUTS(0).R6[Coll[Byte]].get == SELF.R6[Coll[Byte]].get
+	}
+
+	val owner_spending = owner && nft_spent
+	val owner_draining = owner && min_ergs && sent_to_phase1 && registers_preserved && (!nft_spent)
+	val heir_spending = heir && enough_time_elapsed_for_heir_withdrawal
+	val holiday_protector_spending = hash_preimage_ok && sent_to_phase3 && all_preserved
+
+	owner_spending || owner_draining || heir_spending || holiday_protector_spending
+	
+}
+
+--------
+
+Phase3
+
+{
+
+	val owner = SELF.R4[SigmaProp].get
+
+	val holiday_protector_hash = SELF.R6[Coll[Byte]].get
+
+	val blocks_delay = SELF.R7[Int].get
+
+	val nft_id = SELF.R8[Coll[Byte]].get
+
+	val contain_nft = {(output_box: Box) => anyOf(output_box.tokens.map{ (token: (Coll[Byte],Long)) => token._1 == nft_id })}
+
+	val nft_spent = !(OUTPUTS.exists(contain_nft))
+
+	val sent_to_phase1 = blake2b256(OUTPUTS(0).propositionBytes) == SELF.R9[Coll[Byte]].get
+	
+	val registers_preserved = {
+		OUTPUTS(0).R4[SigmaProp].get == SELF.R4[SigmaProp].get &&
+		OUTPUTS(0).R5[SigmaProp].get == SELF.R5[SigmaProp].get &&
+		OUTPUTS(0).R6[Coll[Byte]].get == SELF.R6[Coll[Byte]].get &&
+		OUTPUTS(0).R7[Int].get == SELF.R7[Int].get &&
+		OUTPUTS(0).R8[Coll[Byte]].get == SELF.R8[Coll[Byte]].get &&
+		OUTPUTS(0).R9[Coll[Byte]].get == SELF.R9[Coll[Byte]].get
+	}
+	
+	val ergs_preserved = OUTPUTS(0).value >= (SELF.value - 10000000L)
+	val min_ergs = OUTPUTS(0).value >= (11000000L)
+
+	val tokens_preserved = OUTPUTS(0).tokens == SELF.tokens
+
+	val all_preserved = registers_preserved && ergs_preserved && tokens_preserved
+
+	val hash_of_preimage_in_output = blake2b256(OUTPUTS(0).R6[Coll[Byte]].get)
+
+	val hash_preimage_ok = holiday_protector_hash == hash_of_preimage_in_output
+
+	val enough_time_elapsed_for_anybody_withdrawal = HEIGHT >= (SELF.creationInfo._1 + blocks_delay)
+
+	val owner_spending = owner && nft_spent
+	val owner_draining = owner && min_ergs && sent_to_phase1 && registers_preserved && (!nft_spent)
+	val anybody_spending = enough_time_elapsed_for_anybody_withdrawal && sent_to_phase1 && all_preserved
+
+	owner_spending || owner_draining || anybody_spending
+
+}
+
+--------
+
+Owner indication
+
+{
+	val purpose = "inheritance"
+	val role = "owner"
+	val uniqueBoolHack = purpose == role || true
+	sigmaProp(uniqueBoolHack && PK("owner_address"))
+}
+
+--------
+
+Heir indication
+
+{
+	val purpose = "inheritance"
+	val role = "heir"
+	val uniqueBoolHack = purpose == role || true
+	sigmaProp(uniqueBoolHack && PK("heir_address"))
+}
+
+--------
+
+Holiday protector financial incentivization
+
+Should be spent as second input in transaction, 
+together with inheritance box from phase2 address at first input
+
+R4[Coll[Byte]].get - preimage of blake2b256 hash from inheritance box
+R5[Coll[Byte]].get - id of inheritance box identification nft 
+
+{
+
+	val hash_preimage = SELF.R4[Coll[Byte]].get
+	
+	val phase2_box = INPUTS(0)
+	val phase3_box = OUTPUTS(0)
+
+	val preimage_used = phase3_box.R6[Coll[Byte]].get == hash_preimage
+	val preimage_valid = blake2b256(phase3_box.R6[Coll[Byte]].get) == phase2_box.R6[Coll[Byte]].get
+
+	val nft_id = SELF.R5[Coll[Byte]].get
+
+	val contain_nft = anyOf(OUTPUTS(0).tokens.map{ (token: (Coll[Byte],Long)) => token._1 == nft_id })
+
+	val all_ok = preimage_used && preimage_valid && contain_nft
+
+	all_ok
+
+}
+
+-----------------
+
+About
+
+InERGitance is a decentralized inheritance solution developed specifically for Ergo blockchain.
+Main motivation of the project is to give back freedom and full control over their funds to its' users.
+
+Unfortunately, in many countries freedom of people (especially financial freedom) is heavily restricted by various
+forms of abusive laws. One of the main purposes of cryptocurrencies is to bring back freedom to anyone who desires it.
+Typically, even if some "better" goverments don't impose heavy constraints on financial freedom of a living person,
+they still heavily regulate what will happen with one's property after he dies.
+
+More often than not there are no options for deceased to freely express what they wish to happen with their belongings after their death. There can be, for example, restrictions to pass their belongings only to family members, etc., and even if they don't like it, they simply cannot refuse doing so. Therefore, the purpose of this project is to help those affected people to fully regain their financial freedom.
+
+-----------------
+
+How it works
+
+todo
+
+-----------------
