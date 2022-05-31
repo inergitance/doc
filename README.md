@@ -121,10 +121,15 @@ Has following outputs:
 1.) PHASE1_HERITAGE_CONTRACT_ADDR: inheritance assets (ERG + tokens) +new special NFT (equal to the id of first input box)
 
 R4[SigmaProp] - sigmaprop of owner pubkey
+
 R5[SigmaProp] - sigmaprop of heir pubkey
+
 R6[Coll[Byte]] - blake2b256 hashed value (holiday protection)
+
 R7[Int] - blocks value (amount of blocks)
+
 R8[Coll[Byte]] - indentification NFT id
+
 R9[Coll[Byte]] - blake2b256 hash of phase1 contract propositionBytes
 
 2.) OWNER_INDICATION_CONTRACT_ADDR: MIN_NANO_ERGS
