@@ -11,16 +11,35 @@ Non-custodial decentralized inheritance solution
 Introduction & Motivation
 --------------------------------------------
 
-Main motivation of this proposal is to provide a standard which would give back freedom and full control over their funds to targeted users.
+Main motivation of this proposal is to provide a standard which enables targeted users to use, manage and 
+bequeath their assets according to their free will, giving them full control over their funds and giving 
+them freedom to do so.
 
-Unfortunately, in many countries freedom of people (especially financial freedom) is heavily restricted by various forms of abusive laws. One of the main purposes of cryptocurrencies is to bring back freedom to anyone who desires it. Typically, even if some "better" goverments don't impose heavy constraints on financial freedom of a living person, they still heavily regulate what will happen with one's property after he dies.
+Unfortunately, in many countries freedom of people is being heavily suppressed by various forms of abusive laws. 
+One of the main purposes of cryptocurrencies is to bring back freedom to anyone who desires it, and this EIP
+aims to provide a solution for restricted financial freedom. Typically, even if some "better" governments 
+do not impose heavy constraints on financial freedom of a living person, they still heavily regulate what will
+happen with one´s property after he dies.
 
-More often than not there are no options for deceased to freely express what they wish to happen with their belongings after their death. There can be, for example, restrictions to pass their belongings only to family members, etc., and even if they don't like it, they simply cannot refuse doing so. Therefore, the purpose of this proposal is to define a standard for dApp which will help those affected people to fully regain their financial freedom.
+More often than not there are no options for deceased to freely express what they wish to happen with their 
+belongings after their death. For example, there may exist restrictions regarding passing their belongings 
+only to specific family members and there doesn´t exist any legal way to bypass this restrictions. 
+
+Therefore, the purpose of this proposal is to define a standard for dApp, which will enable those affected 
+people to fully regain their financial freedom. 
 
 Analysis of problem
 --------------------------------------------
 
-todo
+There exist many ways of delegating an inheritance to one´s heirs. These can be generally divided to 2 main categories: custodial (i.e. those where we have to rely on third parties 
+(for example a lawyer)), and non-custodial (which does not require us to trust anybody). 
+
+In traditional life, inheritance is being passed on to heirs using a custodial service, typically with a help of notary. However, this approach can bring up great risks, especially when dealing with a larger amounts of assets. In the case of bequesting belongings in the form of a cryptocurrencies deposited on a wallet, which has its seed stored in a will held by a notary, there exists a not negligible chance of misusing this information by a notary at the expense of owner and heirs. This can be a substantial problem especially when dealing with inheritance in a form of cryptocurrencies, as transactions are ineradicable and once stolen, 
+an inheritance can be considered irretrievably lost. Because of this, custodial approach is unsatisfactory when dealing with a crypto-heritage. Furthermore, notaries are obliges to act under the law in all circumstaces, thus not allowing the owner to freely choose to whom, and in what form, he wants to bequest the heritage, as discussed earlier.
+
+One of the non-custodial ways of preserving a heritage is the use of a wallet, which has its key divided using shamir secret sharing scheme. After choosing proper parameters, let´s say 3 out of 7, 7 new keys are generated, from which at least 3 need to be known to restore the original key. The user can then split these 7 keys to close family and friends. For the family to gain access to the inheritance, all 3 members would have to agree on withdrawing the heritage without the owner´s permission. As can be seen, such solution is much more acceptable than the traditional (custodial) one. However, even this solution can lead to deceiving the owner during his life (for example in the case of family disagreement). 
+
+Assuming the owner is the one and only who can operate with his property while being alive, this solution proposes a way of distributing the inheritance to heirs according to owner´s free will after his death (for example using the shamir secret sharing scheme), while maintaining a full control over his property while he is alive.
 
 Proposed solution
 --------------------------------------------
