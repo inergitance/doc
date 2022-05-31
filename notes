@@ -117,7 +117,7 @@ Phase2
 
 	val owner_spending = owner && nft_spent
 	val owner_draining = owner && min_ergs && sent_to_phase1 && registers_preserved && (!nft_spent)
-	val heir_spending = heir && enough_time_elapsed_for_heir_withdrawal
+	val heir_spending = heir && enough_time_elapsed_for_heir_withdrawal && nft_spent
 	val holiday_protector_spending = hash_preimage_ok && sent_to_phase3 && all_preserved
 
 	owner_spending || owner_draining || heir_spending || holiday_protector_spending
